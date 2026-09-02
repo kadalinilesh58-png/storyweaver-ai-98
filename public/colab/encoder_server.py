@@ -474,7 +474,7 @@ def render(jid, panels, target_seconds=0.0):
             run(["ffmpeg", "-y", "-loop", "1", "-i", pad_src, "-t", f"{drift:.3f}",
                  "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,"
                         f"crop={W}:{H},setsar=1,fps={FPS},"
-                        f"eq=contrast=1.22:brightness=-0.10:saturation=0.84,format=yuv420p",
+                        f"eq=contrast=1.10:brightness=0.04:saturation=0.88,format=yuv420p",
                  "-r", str(FPS), *VCODEC, "-pix_fmt", "yuv420p", tailc])
             listf2 = os.path.join(d, f"list{attempt}.txt")
             with open(listf2, "w") as f:
