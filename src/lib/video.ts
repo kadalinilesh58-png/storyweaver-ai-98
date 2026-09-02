@@ -60,20 +60,21 @@ const MOVES: Move[] = [
 type Grade = { filter: string; tint: string; tintAlpha: number };
 
 /**
- * Dark, mysterious grade set. Every look is low-key: brightness stays under 1,
- * shadows are deepened and a cold tint is laid over the frame, so the finished
- * film keeps one consistent dark tone from first panel to last.
+ * Moody low-key grade set. The source panels are already dim, so the grade no
+ * longer darkens them: brightness sits at or just above 1, contrast is gentle
+ * and the tint is a light wash — atmosphere without crushing the image.
  */
 const GRADES = {
-  night: { filter: "contrast(1.30) brightness(0.68) saturate(0.86)", tint: "#0b1a3a", tintAlpha: 0.30 },
-  ember: { filter: "contrast(1.26) brightness(0.76) saturate(0.94)", tint: "#3d1a08", tintAlpha: 0.24 },
-  interior: { filter: "contrast(1.24) brightness(0.74) saturate(0.88)", tint: "#241a12", tintAlpha: 0.24 },
-  cold: { filter: "contrast(1.28) brightness(0.72) saturate(0.82)", tint: "#0d2233", tintAlpha: 0.26 },
-  dread: { filter: "contrast(1.36) brightness(0.66) saturate(0.78)", tint: "#2a0a0e", tintAlpha: 0.26 },
-  storm: { filter: "contrast(1.26) brightness(0.70) saturate(0.80)", tint: "#12222e", tintAlpha: 0.28 },
-  gloom: { filter: "contrast(1.22) brightness(0.78) saturate(0.84)", tint: "#1b1b22", tintAlpha: 0.24 },
-  memory: { filter: "contrast(1.18) brightness(0.80) saturate(0.74)", tint: "#1d1526", tintAlpha: 0.26 },
+  night: { filter: "contrast(1.12) brightness(1.04) saturate(0.90)", tint: "#0b1a3a", tintAlpha: 0.16 },
+  ember: { filter: "contrast(1.10) brightness(1.06) saturate(0.96)", tint: "#3d1a08", tintAlpha: 0.13 },
+  interior: { filter: "contrast(1.09) brightness(1.06) saturate(0.92)", tint: "#241a12", tintAlpha: 0.13 },
+  cold: { filter: "contrast(1.11) brightness(1.05) saturate(0.88)", tint: "#0d2233", tintAlpha: 0.14 },
+  dread: { filter: "contrast(1.16) brightness(1.02) saturate(0.84)", tint: "#2a0a0e", tintAlpha: 0.15 },
+  storm: { filter: "contrast(1.10) brightness(1.04) saturate(0.86)", tint: "#12222e", tintAlpha: 0.15 },
+  gloom: { filter: "contrast(1.07) brightness(1.06) saturate(0.88)", tint: "#1b1b22", tintAlpha: 0.12 },
+  memory: { filter: "contrast(1.05) brightness(1.07) saturate(0.80)", tint: "#1d1526", tintAlpha: 0.14 },
 } satisfies Record<string, Grade>;
+
 
 const CYCLE = ["gloom", "night", "cold", "interior", "dread"];
 
