@@ -19,9 +19,9 @@ export const STYLE =
 
 /** The single authoritative tone statement for every panel. */
 export const TONE_LOCK =
-  "TONE: moody low-key cinematic lighting — dim, shadowy and mysterious, but the subject, faces and key " +
-  "details are clearly lit and easy to read. Balanced exposure: shadows keep detail, midtones stay visible, " +
-  "no crushed blacks, no muddy underexposed frame, no flat bright daylight and no washed-out white background";
+  "TONE: moody low-key cinematic lighting, dim and mysterious, with the subject, faces and key details clearly lit " +
+  "and easy to read; shadows keep detail and midtones stay visible";
+
 
 /** @deprecated kept as an alias so older call sites keep compiling. */
 export const DARK_TONE_LOCK = TONE_LOCK;
