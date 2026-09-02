@@ -10,6 +10,7 @@ import {
 import { buildTimeline, fmt, scriptEndTime, type Segment } from "@/lib/script";
 import { buildVideo, webCodecsSupported } from "@/lib/video";
 import { isBlankImageUrl } from "@/lib/blank";
+import { loadRun, saveRun } from "@/lib/progress";
 import { colabHealth, normalizeColabUrl, renderOnColab } from "@/lib/colab";
 
 
@@ -80,22 +81,11 @@ function scriptKey(script: string): string {
 
 type Saved = { bible: string; shots: Shot[] };
 
-function loadSaved(key: string): Saved | null {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as Saved) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveProgress(key: string, data: Saved) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    /* quota — progress just isn't resumable */
-  }
-}
+// Progress lives in IndexedDB (src/lib/progress.ts): a long script's shots +
+// prompts overflow localStorage's ~5MB quota, which is what triggered the
+// "exceed its storage quota" failure.
+const loadSaved = (key: string) => loadRun<Shot>(key);
+const saveProgress = (key: string, data: Saved) => saveRun(key, data);
 
 async function pool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
   let i = 0;
@@ -173,16 +163,21 @@ function Index() {
       setCanResume(false);
       return;
     }
-    const saved = loadSaved(scriptKey(script));
-    setCanResume(!!saved && saved.shots.length > 0 && shots.length === 0);
+    let alive = true;
+    void loadSaved(scriptKey(script)).then((saved) => {
+      if (alive) setCanResume(!!saved && saved.shots.length > 0 && shots.length === 0);
+    });
+    return () => {
+      alive = false;
+    };
   }, [script, shots.length]);
 
   const patch = useCallback((index: number, next: Partial<Shot>) => {
     setShots((prev) => prev.map((s) => (s.index === index ? { ...s, ...next } : s)));
   }, []);
 
-  function resume() {
-    const saved = loadSaved(scriptKey(script));
+  async function resume() {
+    const saved = await loadSaved(scriptKey(script));
     if (!saved) return;
     setBible(saved.bible);
     setShots(saved.shots);
@@ -258,7 +253,7 @@ function Index() {
         const now = Date.now();
         if (now - saveTimer < 4000) return;
         saveTimer = now;
-        saveProgress(key, { bible: b, shots: list });
+        void saveProgress(key, { bible: b, shots: list });
       };
 
       const promptStage = pool(batches, PROMPT_CONCURRENCY, async (batch) => {
@@ -391,7 +386,7 @@ function Index() {
         ...Array.from({ length: IMAGE_CONCURRENCY }, () => worker()),
       ]);
 
-      saveProgress(key, { bible: b, shots: list });
+      await saveProgress(key, { bible: b, shots: list });
       setPhase("done");
       const bad = list.filter((s) => !s.url).length;
       setNote(bad ? `${list.length - bad}/${list.length} panels ready · ${bad} failed` : "All panels generated.");
@@ -436,7 +431,7 @@ function Index() {
       n++;
       setNote(`Retrying failed panels ${n}/${targets.length}`);
     });
-    saveProgress(key, { bible, shots: list });
+    await saveProgress(key, { bible, shots: list });
     setPhase("done");
     setNote("Retry finished.");
   }
