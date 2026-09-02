@@ -515,7 +515,7 @@ export function composeImagePrompt(prompt: string, bible?: string): string {
   // ban is repeated at both ends because that artefact is the most persistent.
   return (
     `${NO_TEXT_GUARD}. ${lock ? lock + " " : ""}${STYLE}. ${fixed}. ` +
-    `${DARK_TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ${NO_TEXT_GUARD}. 16:9 widescreen cinematic framing.`
+    `${TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ${NO_TEXT_GUARD}. 16:9 widescreen cinematic framing.`
   );
 }
 
