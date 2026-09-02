@@ -19,40 +19,35 @@ export const STYLE =
 
 /** The single authoritative tone statement for every panel. */
 export const TONE_LOCK =
-  "TONE: moody low-key cinematic lighting — dim, shadowy and mysterious, but the subject, faces and key " +
-  "details are clearly lit and easy to read. Balanced exposure: shadows keep detail, midtones stay visible, " +
-  "no crushed blacks, no muddy underexposed frame, no flat bright daylight and no washed-out white background";
+  "TONE: moody low-key cinematic lighting, dim and mysterious, with the subject, faces and key details clearly lit " +
+  "and easy to read; shadows keep detail and midtones stay visible";
+
 
 /** @deprecated kept as an alias so older call sites keep compiling. */
 export const DARK_TONE_LOCK = TONE_LOCK;
 
 
-/**
- * Text is the single most common Flux artefact, so it gets its own hard block
- * that is injected at BOTH ends of the prompt.
- */
-export const NO_TEXT_GUARD =
-  "ABSOLUTELY NO TEXT ANYWHERE IN THE IMAGE: no letters, no words, no numbers, no digits, no captions, no subtitles, " +
-  "no title card, no speech bubbles, no dialogue balloons, no thought bubbles, no onomatopoeia, no sound effects, " +
-  "no signage, no shop signs, no street signs, no billboards, no posters, no banners, no newspaper, no book pages, " +
-  "no labels, no tags, no handwriting, no calligraphy, no graffiti, no tattoos with writing, no screen text, no UI, " +
-  "no watermark, no signature, no logo, no branding, no gibberish glyphs, no fake alphabets, no symbols resembling writing. " +
-  "Every surface — walls, clothing, papers, screens, vehicles — is completely blank and free of writing";
 
 /**
- * Hard guards that stop the model from drawing a character reference sheet,
- * a character portrait inset, or a split/collage layout next to the scene.
+ * Flux has NO negative prompt: every noun written here is a token the model can
+ * draw. Long "no speech bubbles, no posters, no billboards..." lists were being
+ * rendered literally (walls of speech bubbles and signage). So the guards are
+ * now short and phrased POSITIVELY wherever possible.
  */
+export const NO_TEXT_GUARD = "completely free of any text, lettering or signage";
+
+/** Single-image guard. Deliberately short; see NO_TEXT_GUARD note above. */
 export const SINGLE_PANEL_GUARD =
-  "ONE single full-bleed illustration of this one moment only, one continuous scene, " +
-  "no character reference sheet, no character lineup, no turnaround, no inset portrait, " +
-  "no side panel, no split screen, no collage, no grid, no multiple panels, no borders, no frame, " +
-  "no duplicated characters, no repeated figures, no extra copies of the same person, " +
-  "ONLY the people explicitly named in this description, no extra people, no bystanders, no crowd, no background characters, " +
-  "no animals of any kind, no cow, no cattle, no sheep, no goat, no horse, no dog, no cat, no birds, no butterflies, no livestock, no wildlife, " +
-  "no invented props or creatures that are not described, " +
-  "every named character must keep the exact gender stated in this prompt, no gender swapping, no feminized male characters, no masculinized female characters, " +
-  "not empty, not a blank canvas, not a solid colour fill, not an abstract texture — a fully drawn detailed scene with a clear subject";
+  "one single full-bleed illustration of this one moment, one continuous scene, fully drawn and detailed";
+
+/** Added only when the scene has no people in it. */
+export const NO_PEOPLE_GUARD =
+  "an empty environment shot with no people, no figures and no characters anywhere in frame";
+
+/** Added only when the scene does have named/described people. */
+export const CAST_GUARD =
+  "only the people described above are present, each drawn once, keeping the exact gender stated";
+
 
 export async function zaiChat(
   messages: { role: string; content: string }[],
@@ -217,11 +212,13 @@ const PROMPT_SYSTEM =
   "You write image prompts for a DARK, mysterious, cinematic manga storyboard. Input: a character bible, optional story " +
   "context, and numbered script lines (Hindi/Hinglish). For EACH numbered line write ONE English image prompt describing a " +
   "SINGLE cinematic moment from that line.\n" +
-  "EVERY prompt must contain, in this order: (1) who is in frame with their bible traits woven inline, (2) their exact " +
-  "action and facial expression, (3) the specific setting with 2-3 concrete environmental details taken from the script " +
-  "line, (4) the camera angle and shot size (extreme close-up / close-up / medium / wide / low angle / over-the-shoulder / " +
-  "Dutch tilt), (5) the DARK lighting description (e.g. 'single bare bulb throwing hard shadows', 'blue moonlight through " +
-  "a barred window', 'dull ember glow in thick darkness').\n" +
+  "EVERY prompt must contain, in this order: (1) who is in frame with their bible traits woven inline — but ONLY if the " +
+  "script line actually mentions a person; if it mentions none, this part is skipped entirely and the shot has no people " +
+  "at all, (2) the exact action and facial expression, (3) the specific setting with 2-3 concrete environmental details " +
+  "taken from the script line, (4) the camera angle and shot size (extreme close-up / close-up / medium / wide / low " +
+  "angle / over-the-shoulder / Dutch tilt), (5) the lighting description (e.g. 'single bare bulb throwing hard shadows', " +
+  "'blue moonlight through a barred window', 'dull ember glow in thick darkness').\n" +
+
   "RULES:\n" +
   "- FAITHFUL DETAIL (critical): the prompt must capture the specific things that line actually says — the object, the " +
   "place, the gesture, the emotion, the weather, the time of day. Never write a generic 'a boy stands thinking' prompt. " +
@@ -243,11 +240,17 @@ const PROMPT_SYSTEM =
   "side-by-side views.\n" +
   "- CAST FIDELITY: include ONLY the people that specific script line mentions. If a line mentions only Henan, the prompt " +
   "must contain Henan ALONE. Never assume two characters are together unless the line says so.\n" +
+  "- NO-CHARACTER LINES (critical): if the line describes only a place, an object, the sky, weather or a phenomenon and " +
+  "names NO person, the prompt MUST be a pure environment shot with NOBODY in it. Start it with 'Empty environment shot, " +
+  "no people:' and describe only the place/object/phenomenon, its scale, atmosphere and lighting. Never add a silhouette, " +
+  "a lone figure, an onlooker or the main character just to fill the frame.\n" +
+  "- CROWD LINES: if the line says many people, everyone, a crowd, people running or panicking, then the prompt MUST show " +
+  "that crowd (many varied ordinary people, their expressions and motion) — do not reduce it to one person.\n" +
   "- SIDE CHARACTERS: if the line mentions someone NOT in the bible (a boss, teacher, shopkeeper), invent a short distinct " +
   "visual for them inline (age, gender, one clothing detail). NEVER substitute a main character's name or traits.\n" +
-  "- STRICT FIDELITY: describe ONLY what the script line actually says. Never invent people, animals (cows, sheep, goats, " +
-  "dogs, cats, birds), vehicles or crowds the line does not mention. If the line names no location, keep the background a " +
-  "simple dark neutral space.\n" +
+  "- STRICT FIDELITY: describe ONLY what the script line actually says. Never invent people, animals, vehicles or crowds " +
+  "the line does not mention. If the line names no location, keep the background a simple dark neutral space.\n" +
+
   "- NO TEXT: never describe text, letters, words, numbers, signs, signboards, posters, banners, newspapers, book pages, " +
   "screens with writing, labels or logos. If the script mentions something written, show the OBJECT and the character's " +
   "reaction instead, never the writing itself.\n" +
@@ -507,16 +510,31 @@ export function characterLock(prompt: string, bible?: string): string {
   );
 }
 
+/** True when the prompt describes at least one human in frame. */
+export function hasPeople(prompt: string, bible?: string): boolean {
+  const p = prompt.toLowerCase();
+  if (/\bno (people|figures?|characters?|humans?)\b|\bempty environment\b|\bunpopulated\b/.test(p))
+    return false;
+  if (bible && parseBible(bible).some((e) => new RegExp(`\\b${escapeRe(e.name)}\\b`, "i").test(prompt)))
+    return true;
+  return /\b(man|men|woman|women|boy|boys|girl|girls|child|children|person|people|crowd|figure|silhouette|soldier|guard|villager|student|teacher|shopkeeper|worker|stranger|face|faces|he|she|they)\b/.test(
+    p,
+  );
+}
+
 export function composeImagePrompt(prompt: string, bible?: string): string {
   const fixed = enforceGender(sanitizePrompt(prompt), bible);
-  const lock = characterLock(fixed, bible);
-  // The gender lock goes FIRST: the earliest tokens carry the most weight in
-  // Flux, which is exactly where character identity has to be pinned. The text
-  // ban is repeated at both ends because that artefact is the most persistent.
+  const peopled = hasPeople(fixed, bible);
+  // Character lock only matters when someone is actually in frame.
+  const lock = peopled ? characterLock(fixed, bible) : "";
+  // The scene description leads: Flux weights the earliest tokens most, and it
+  // has no negative prompt, so guards are kept short and placed at the end.
   return (
-    `${NO_TEXT_GUARD}. ${lock ? lock + " " : ""}${STYLE}. ${fixed}. ` +
-    `${TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ${NO_TEXT_GUARD}. 16:9 widescreen cinematic framing.`
+    `${fixed}. ${lock ? lock + " " : ""}${STYLE}, ${NO_TEXT_GUARD}. ` +
+    `${peopled ? CAST_GUARD : NO_PEOPLE_GUARD}. ${TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ` +
+    `16:9 widescreen cinematic framing.`
   );
+
 }
 
 /**
