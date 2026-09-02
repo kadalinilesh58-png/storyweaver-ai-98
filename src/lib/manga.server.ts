@@ -328,10 +328,11 @@ export async function writePrompts(
 
 function fallbackPrompt(s: Segment): string {
   return (
-    "A single dark cinematic manga scene, dim moody low-key lighting with deep shadows, depicting this exact story " +
+    "A single cinematic manga scene, moody low-key lighting with the subject clearly lit, depicting this exact story " +
     `moment: ${s.text}`
   );
 }
+
 
 /** Phrases that make Flux draw letterforms. Replaced with a neutral equivalent. */
 const TEXT_TRIGGERS: [RegExp, string][] = [
