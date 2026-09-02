@@ -226,9 +226,10 @@ const PROMPT_SYSTEM =
   "- FAITHFUL DETAIL (critical): the prompt must capture the specific things that line actually says — the object, the " +
   "place, the gesture, the emotion, the weather, the time of day. Never write a generic 'a boy stands thinking' prompt. " +
   "Do not skip story details; if the line has several details, include the most visual ones.\n" +
-  "- TONE (mandatory): every image is dark, dim, shadow-heavy, moody and mysterious. Use night, dusk, storm, dim " +
-  "interiors, single light sources, deep shadow. NEVER describe bright sunny daylight, cheerful light, white backgrounds " +
-  "or flat even lighting. Even a daytime line must be overcast, gloomy and desaturated.\n" +
+  "- TONE: moody low-key and mysterious — night, dusk, storm, dim interiors, motivated single light sources — but the " +
+  "subject must be clearly lit and readable: name a key light that lands on the character's face. Avoid flat bright " +
+  "sunny daylight and white backgrounds; a daytime line can be overcast or softly lit rather than pitch dark.\n" +
+
   "- Weave a character's fixed traits INLINE into the sentence (e.g. 'Henan, a thin 17-year-old boy with messy jet-black " +
   "hair, sits...'). NEVER write a separate character description block, character sheet, reference, lineup, or 'plus portrait of'.\n" +
   "- CONSISTENCY: repeat a character's bible traits (hair, eyes, clothing colours) in EVERY prompt they appear in, using " +
