@@ -97,19 +97,20 @@ MOVES = [
     (1.08, 1.22, 0.15, 0.85, 0.85, 0.15),
 ]
 
-# Dark, mysterious grade set. Every look is low-key: brightness is always
-# negative, contrast is lifted and a cold/dim cast is applied, so the whole film
-# keeps one consistent dark tone.
+# Moody low-key grade set — dim and atmospheric, but subjects, faces and key
+# details stay clearly readable. Brightness is lifted slightly (the source
+# panels are already dark), contrast is moderate, with a cold/dim cast.
 GRADES = {
-    "night":    ("1.30", "-0.13", "0.86", "0.06:0.00:-0.12"),
-    "ember":    ("1.26", "-0.09", "0.94", "0.10:0.00:-0.10"),
-    "interior": ("1.24", "-0.10", "0.88", "0.06:-0.01:-0.07"),
-    "cold":     ("1.28", "-0.12", "0.82", "-0.08:0.00:0.08"),
-    "dread":    ("1.36", "-0.15", "0.78", "0.09:-0.03:-0.04"),
-    "storm":    ("1.26", "-0.13", "0.80", "-0.06:0.00:0.07"),
-    "gloom":    ("1.22", "-0.10", "0.84", "0.00:0.00:0.02"),
-    "memory":   ("1.18", "-0.09", "0.74", "0.04:-0.02:0.06"),
+    "night":    ("1.14", "0.03", "0.90", "0.05:0.00:-0.10"),
+    "ember":    ("1.12", "0.05", "0.96", "0.08:0.00:-0.08"),
+    "interior": ("1.10", "0.05", "0.92", "0.05:-0.01:-0.06"),
+    "cold":     ("1.12", "0.04", "0.88", "-0.06:0.00:0.07"),
+    "dread":    ("1.18", "0.02", "0.84", "0.07:-0.02:-0.03"),
+    "storm":    ("1.12", "0.03", "0.86", "-0.05:0.00:0.06"),
+    "gloom":    ("1.08", "0.05", "0.88", "0.00:0.00:0.02"),
+    "memory":   ("1.06", "0.05", "0.80", "0.03:-0.02:0.05"),
 }
+
 CYCLE = ["gloom", "night", "cold", "interior", "dread"]
 
 KEYS = [
