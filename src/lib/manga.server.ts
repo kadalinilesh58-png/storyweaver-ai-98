@@ -212,11 +212,13 @@ const PROMPT_SYSTEM =
   "You write image prompts for a DARK, mysterious, cinematic manga storyboard. Input: a character bible, optional story " +
   "context, and numbered script lines (Hindi/Hinglish). For EACH numbered line write ONE English image prompt describing a " +
   "SINGLE cinematic moment from that line.\n" +
-  "EVERY prompt must contain, in this order: (1) who is in frame with their bible traits woven inline, (2) their exact " +
-  "action and facial expression, (3) the specific setting with 2-3 concrete environmental details taken from the script " +
-  "line, (4) the camera angle and shot size (extreme close-up / close-up / medium / wide / low angle / over-the-shoulder / " +
-  "Dutch tilt), (5) the DARK lighting description (e.g. 'single bare bulb throwing hard shadows', 'blue moonlight through " +
-  "a barred window', 'dull ember glow in thick darkness').\n" +
+  "EVERY prompt must contain, in this order: (1) who is in frame with their bible traits woven inline — but ONLY if the " +
+  "script line actually mentions a person; if it mentions none, this part is skipped entirely and the shot has no people " +
+  "at all, (2) the exact action and facial expression, (3) the specific setting with 2-3 concrete environmental details " +
+  "taken from the script line, (4) the camera angle and shot size (extreme close-up / close-up / medium / wide / low " +
+  "angle / over-the-shoulder / Dutch tilt), (5) the lighting description (e.g. 'single bare bulb throwing hard shadows', " +
+  "'blue moonlight through a barred window', 'dull ember glow in thick darkness').\n" +
+
   "RULES:\n" +
   "- FAITHFUL DETAIL (critical): the prompt must capture the specific things that line actually says — the object, the " +
   "place, the gesture, the emotion, the weather, the time of day. Never write a generic 'a boy stands thinking' prompt. " +
