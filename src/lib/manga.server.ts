@@ -7,21 +7,25 @@ const CHAT_MODEL = "qwen3.8-27b";
 const PIXAZO_URL = "https://gateway.pixazo.ai/flux-1-schnell/v1/getData";
 
 /**
- * Global art direction: dark, mysterious, cinematic. Every panel in every
- * export uses this exact string so the whole film shares one look.
+ * Global art direction: look and craft only. The tone is stated ONCE, in
+ * TONE_LOCK below — stacking it here as well is what used to compound into
+ * near-black panels.
  */
 export const STYLE =
-  "dark mysterious cinematic anime manga illustration, low-key moody lighting, deep shadows and pools of darkness, " +
-  "muted desaturated palette of charcoal black, midnight blue, cold slate grey and dull ember orange, " +
-  "single hard rim light carving the subject out of the gloom, heavy atmospheric haze, volumetric god rays through dust, " +
-  "cel shading with dark gradients, bold clean ink lines, richly detailed painted backgrounds, ominous foreboding mood, " +
-  "high quality dark anime key visual, night or dim interior lighting";
+  "cinematic anime manga illustration, moody atmospheric key visual, " +
+  "restrained palette of charcoal, midnight blue, cold slate grey and warm ember accents, " +
+  "cel shading with soft gradients, bold clean ink lines, richly detailed painted backgrounds, " +
+  "clear focal subject, crisp facial features, high quality anime key visual";
 
-/** Non-negotiable tone lock, stated separately so it carries its own weight. */
-export const DARK_TONE_LOCK =
-  "MANDATORY TONE: dark, dim, shadow-heavy and mysterious. Overall image brightness is LOW. " +
-  "No bright daylight, no sunny cheerful lighting, no white or pastel backgrounds, no washed-out highlights, " +
-  "no flat even lighting — darkness and shadow must dominate the frame";
+/** The single authoritative tone statement for every panel. */
+export const TONE_LOCK =
+  "TONE: moody low-key cinematic lighting — dim, shadowy and mysterious, but the subject, faces and key " +
+  "details are clearly lit and easy to read. Balanced exposure: shadows keep detail, midtones stay visible, " +
+  "no crushed blacks, no muddy underexposed frame, no flat bright daylight and no washed-out white background";
+
+/** @deprecated kept as an alias so older call sites keep compiling. */
+export const DARK_TONE_LOCK = TONE_LOCK;
+
 
 /**
  * Text is the single most common Flux artefact, so it gets its own hard block
