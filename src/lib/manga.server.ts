@@ -238,11 +238,17 @@ const PROMPT_SYSTEM =
   "side-by-side views.\n" +
   "- CAST FIDELITY: include ONLY the people that specific script line mentions. If a line mentions only Henan, the prompt " +
   "must contain Henan ALONE. Never assume two characters are together unless the line says so.\n" +
+  "- NO-CHARACTER LINES (critical): if the line describes only a place, an object, the sky, weather or a phenomenon and " +
+  "names NO person, the prompt MUST be a pure environment shot with NOBODY in it. Start it with 'Empty environment shot, " +
+  "no people:' and describe only the place/object/phenomenon, its scale, atmosphere and lighting. Never add a silhouette, " +
+  "a lone figure, an onlooker or the main character just to fill the frame.\n" +
+  "- CROWD LINES: if the line says many people, everyone, a crowd, people running or panicking, then the prompt MUST show " +
+  "that crowd (many varied ordinary people, their expressions and motion) — do not reduce it to one person.\n" +
   "- SIDE CHARACTERS: if the line mentions someone NOT in the bible (a boss, teacher, shopkeeper), invent a short distinct " +
   "visual for them inline (age, gender, one clothing detail). NEVER substitute a main character's name or traits.\n" +
-  "- STRICT FIDELITY: describe ONLY what the script line actually says. Never invent people, animals (cows, sheep, goats, " +
-  "dogs, cats, birds), vehicles or crowds the line does not mention. If the line names no location, keep the background a " +
-  "simple dark neutral space.\n" +
+  "- STRICT FIDELITY: describe ONLY what the script line actually says. Never invent people, animals, vehicles or crowds " +
+  "the line does not mention. If the line names no location, keep the background a simple dark neutral space.\n" +
+
   "- NO TEXT: never describe text, letters, words, numbers, signs, signboards, posters, banners, newspapers, book pages, " +
   "screens with writing, labels or logos. If the script mentions something written, show the OBJECT and the character's " +
   "reaction instead, never the writing itself.\n" +
