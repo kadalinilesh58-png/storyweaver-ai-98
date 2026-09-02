@@ -510,16 +510,31 @@ export function characterLock(prompt: string, bible?: string): string {
   );
 }
 
+/** True when the prompt describes at least one human in frame. */
+export function hasPeople(prompt: string, bible?: string): boolean {
+  const p = prompt.toLowerCase();
+  if (/\bno (people|figures?|characters?|humans?)\b|\bempty environment\b|\bunpopulated\b/.test(p))
+    return false;
+  if (bible && parseBible(bible).some((e) => new RegExp(`\\b${escapeRe(e.name)}\\b`, "i").test(prompt)))
+    return true;
+  return /\b(man|men|woman|women|boy|boys|girl|girls|child|children|person|people|crowd|figure|silhouette|soldier|guard|villager|student|teacher|shopkeeper|worker|stranger|face|faces|he|she|they)\b/.test(
+    p,
+  );
+}
+
 export function composeImagePrompt(prompt: string, bible?: string): string {
   const fixed = enforceGender(sanitizePrompt(prompt), bible);
-  const lock = characterLock(fixed, bible);
-  // The gender lock goes FIRST: the earliest tokens carry the most weight in
-  // Flux, which is exactly where character identity has to be pinned. The text
-  // ban is repeated at both ends because that artefact is the most persistent.
+  const peopled = hasPeople(fixed, bible);
+  // Character lock only matters when someone is actually in frame.
+  const lock = peopled ? characterLock(fixed, bible) : "";
+  // The scene description leads: Flux weights the earliest tokens most, and it
+  // has no negative prompt, so guards are kept short and placed at the end.
   return (
-    `${NO_TEXT_GUARD}. ${lock ? lock + " " : ""}${STYLE}. ${fixed}. ` +
-    `${TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ${NO_TEXT_GUARD}. 16:9 widescreen cinematic framing.`
+    `${fixed}. ${lock ? lock + " " : ""}${STYLE}, ${NO_TEXT_GUARD}. ` +
+    `${peopled ? CAST_GUARD : NO_PEOPLE_GUARD}. ${TONE_LOCK}. ${SINGLE_PANEL_GUARD}. ` +
+    `16:9 widescreen cinematic framing.`
   );
+
 }
 
 /**
