@@ -176,8 +176,8 @@ function Index() {
     setShots((prev) => prev.map((s) => (s.index === index ? { ...s, ...next } : s)));
   }, []);
 
-  function resume() {
-    const saved = loadSaved(scriptKey(script));
+  async function resume() {
+    const saved = await loadSaved(scriptKey(script));
     if (!saved) return;
     setBible(saved.bible);
     setShots(saved.shots);
