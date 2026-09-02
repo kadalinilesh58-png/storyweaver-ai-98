@@ -27,17 +27,6 @@ export const TONE_LOCK =
 export const DARK_TONE_LOCK = TONE_LOCK;
 
 
-/**
- * Text is the single most common Flux artefact, so it gets its own hard block
- * that is injected at BOTH ends of the prompt.
- */
-export const NO_TEXT_GUARD =
-  "ABSOLUTELY NO TEXT ANYWHERE IN THE IMAGE: no letters, no words, no numbers, no digits, no captions, no subtitles, " +
-  "no title card, no speech bubbles, no dialogue balloons, no thought bubbles, no onomatopoeia, no sound effects, " +
-  "no signage, no shop signs, no street signs, no billboards, no posters, no banners, no newspaper, no book pages, " +
-  "no labels, no tags, no handwriting, no calligraphy, no graffiti, no tattoos with writing, no screen text, no UI, " +
-  "no watermark, no signature, no logo, no branding, no gibberish glyphs, no fake alphabets, no symbols resembling writing. " +
-  "Every surface — walls, clothing, papers, screens, vehicles — is completely blank and free of writing";
 
 /**
  * Flux has NO negative prompt: every noun written here is a token the model can
