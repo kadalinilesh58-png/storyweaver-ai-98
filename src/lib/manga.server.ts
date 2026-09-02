@@ -40,19 +40,25 @@ export const NO_TEXT_GUARD =
   "Every surface — walls, clothing, papers, screens, vehicles — is completely blank and free of writing";
 
 /**
- * Hard guards that stop the model from drawing a character reference sheet,
- * a character portrait inset, or a split/collage layout next to the scene.
+ * Flux has NO negative prompt: every noun written here is a token the model can
+ * draw. Long "no speech bubbles, no posters, no billboards..." lists were being
+ * rendered literally (walls of speech bubbles and signage). So the guards are
+ * now short and phrased POSITIVELY wherever possible.
  */
+export const NO_TEXT_GUARD = "completely free of any text, lettering or signage";
+
+/** Single-image guard. Deliberately short; see NO_TEXT_GUARD note above. */
 export const SINGLE_PANEL_GUARD =
-  "ONE single full-bleed illustration of this one moment only, one continuous scene, " +
-  "no character reference sheet, no character lineup, no turnaround, no inset portrait, " +
-  "no side panel, no split screen, no collage, no grid, no multiple panels, no borders, no frame, " +
-  "no duplicated characters, no repeated figures, no extra copies of the same person, " +
-  "ONLY the people explicitly named in this description, no extra people, no bystanders, no crowd, no background characters, " +
-  "no animals of any kind, no cow, no cattle, no sheep, no goat, no horse, no dog, no cat, no birds, no butterflies, no livestock, no wildlife, " +
-  "no invented props or creatures that are not described, " +
-  "every named character must keep the exact gender stated in this prompt, no gender swapping, no feminized male characters, no masculinized female characters, " +
-  "not empty, not a blank canvas, not a solid colour fill, not an abstract texture — a fully drawn detailed scene with a clear subject";
+  "one single full-bleed illustration of this one moment, one continuous scene, fully drawn and detailed";
+
+/** Added only when the scene has no people in it. */
+export const NO_PEOPLE_GUARD =
+  "an empty environment shot with no people, no figures and no characters anywhere in frame";
+
+/** Added only when the scene does have named/described people. */
+export const CAST_GUARD =
+  "only the people described above are present, each drawn once, keeping the exact gender stated";
+
 
 export async function zaiChat(
   messages: { role: string; content: string }[],
