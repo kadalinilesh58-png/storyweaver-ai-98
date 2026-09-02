@@ -347,17 +347,19 @@ const TEXT_TRIGGERS: [RegExp, string][] = [
   [/“[^”]{0,120}”/g, ""],
 ];
 
-/** Bright-light phrasing that would break the mandatory dark tone. */
+/**
+ * Only the extremes are softened now. The old rules rewrote ANY mention of
+ * light into shadow, which stacked with the tone lock and the render grade and
+ * made every panel far too dark.
+ */
 const BRIGHT_TRIGGERS: [RegExp, string][] = [
-  [/\b(bright|brightly|blinding|dazzling)\s+(sunlight|sunshine|daylight|light|lighting|sun)\b/gi, "dim shadowy light"],
-  [/\b(bright sunny|sunny|sunlit|sun-drenched|sun drenched)\b/gi, "overcast gloomy"],
-  [/\b(bright|brightly lit|well[- ]lit|cheerful|cheery|vibrant|radiant|glowing warmly|airy)\b/gi, "dim"],
-  [/\b(white|pale|pastel|clean white)\s+background\b/gi, "dark shadowy background"],
-  [/\b(midday sun|noon sun|clear blue sky|bright blue sky|golden sunlight)\b/gi, "heavy grey overcast sky"],
-  [/\b(flat even lighting|even lighting|soft daylight|daylight)\b/gi, "low-key shadowed lighting"],
+  [/\b(blinding|dazzling)\s+(sunlight|sunshine|daylight|light|lighting|sun)\b/gi, "soft directional light"],
+  [/\b(sun-drenched|sun drenched)\b/gi, "overcast"],
+  [/\b(white|pastel|clean white)\s+background\b/gi, "muted grey background"],
+  [/\b(midday sun|noon sun|clear blue sky|bright blue sky)\b/gi, "overcast grey sky"],
 ];
 
-/** Removes phrasing that makes the model draw a sheet/portrait, text, or bright light. */
+/** Removes phrasing that makes the model draw a sheet/portrait, text, or blown-out light. */
 export function sanitizePrompt(p: string): string {
   let out = p
     .replace(
@@ -366,10 +368,11 @@ export function sanitizePrompt(p: string): string {
     )
     .replace(
       /\b(black[- ]and[- ]white|black ?& ?white|monochrome|monochromatic|gr[ae]yscale|sepia|screentone|halftone|ink wash only)\b/gi,
-      "dark full colour",
+      "full colour",
     );
   for (const [re, to] of TEXT_TRIGGERS) out = out.replace(re, to);
   for (const [re, to] of BRIGHT_TRIGGERS) out = out.replace(re, to);
+
   return out
     .replace(/\s{2,}/g, " ")
     .replace(/\s+([,.])/g, "$1")
