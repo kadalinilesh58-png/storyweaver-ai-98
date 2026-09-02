@@ -253,7 +253,7 @@ function Index() {
         const now = Date.now();
         if (now - saveTimer < 4000) return;
         saveTimer = now;
-        saveProgress(key, { bible: b, shots: list });
+        void saveProgress(key, { bible: b, shots: list });
       };
 
       const promptStage = pool(batches, PROMPT_CONCURRENCY, async (batch) => {
@@ -386,7 +386,7 @@ function Index() {
         ...Array.from({ length: IMAGE_CONCURRENCY }, () => worker()),
       ]);
 
-      saveProgress(key, { bible: b, shots: list });
+      await saveProgress(key, { bible: b, shots: list });
       setPhase("done");
       const bad = list.filter((s) => !s.url).length;
       setNote(bad ? `${list.length - bad}/${list.length} panels ready · ${bad} failed` : "All panels generated.");
@@ -431,7 +431,7 @@ function Index() {
       n++;
       setNote(`Retrying failed panels ${n}/${targets.length}`);
     });
-    saveProgress(key, { bible, shots: list });
+    await saveProgress(key, { bible, shots: list });
     setPhase("done");
     setNote("Retry finished.");
   }
