@@ -80,22 +80,11 @@ function scriptKey(script: string): string {
 
 type Saved = { bible: string; shots: Shot[] };
 
-function loadSaved(key: string): Saved | null {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as Saved) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveProgress(key: string, data: Saved) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    /* quota — progress just isn't resumable */
-  }
-}
+// Progress lives in IndexedDB (src/lib/progress.ts): a long script's shots +
+// prompts overflow localStorage's ~5MB quota, which is what triggered the
+// "exceed its storage quota" failure.
+const loadSaved = (key: string) => loadRun<Shot>(key);
+const saveProgress = (key: string, data: Saved) => saveRun(key, data);
 
 async function pool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
   let i = 0;
