@@ -301,26 +301,60 @@ def render(jid, panels, target_seconds=0.0):
     if subs:
         print(f"[scene-weaver] {subs} panel(s) substituted with a neighbour image")
 
+    # ---- frame budget: exact absolute frames taken from the global target ---
+    # Every lane boundary is computed in ABSOLUTE frames from the final target,
+    # so per-panel rounding can never accumulate: sum(frames) == total_frames.
+    starts = [float(p["start"]) for p in panels]
+    ends = [float(p["end"]) for p in panels]
+    target = float(target_seconds or 0.0)
+    if target <= 0:
+        target = max(ends[-1] - starts[0],
+                     sum(max(0.8, e - s) for s, e in zip(starts, ends)))
+    total_frames = max(n, int(round(target * FPS)))
+    t0 = starts[0]
+    span_s = max(1e-6, ends[-1] - t0)
+
+    bounds = [0]
+    for i in range(n):
+        bounds.append(int(round((ends[i] - t0) / span_s * total_frames)))
+    bounds[n] = total_frames
+    for i in range(1, n + 1):                 # monotonic, >= 1 frame per panel
+        if bounds[i] <= bounds[i - 1]:
+            bounds[i] = bounds[i - 1] + 1
+    if bounds[n] > total_frames:              # clamp pushed past target: reclaim
+        bounds[n] = total_frames
+        for i in range(n - 1, 0, -1):
+            if bounds[i] >= bounds[i + 1]:
+                bounds[i] = bounds[i + 1] - 1
+            else:
+                break
+    frames = [max(1, bounds[i + 1] - bounds[i]) for i in range(n)]
+    durs = [f / FPS for f in frames]
+    target = total_frames / FPS
+    XFF = max(1, int(round(XF * FPS)))        # transition overlap, in frames
+
     # ---- stage 2: one clip per panel ---------------------------------------
     done = [0]
 
     def one(i):
         p = panels[i]
-        dur = max(0.8, float(p["end"]) - float(p["start"]))
-        # crossfade needs XF extra seconds of tail on every clip but the last
-        tail = XF if i < n - 1 else 0.0
+        # The transition overlap is borrowed from the FOLLOWING panel's budget:
+        # the clip renders frames[i] visible frames plus an XFF tail that the
+        # next panel's fade consumes, so no transition eats real running time.
+        tail = XFF if i < n - 1 else 0
+        total = frames[i] + tail
         clip = os.path.join(d, f"c{i:06d}.mp4")
-        run(["ffmpeg", "-y", "-loop", "1", "-i", imgs[i], "-t", f"{dur + tail:.3f}",
-             "-vf", clip_filter(i, dur + tail, p.get("prompt")),
+        run(["ffmpeg", "-y", "-loop", "1", "-i", imgs[i],
+             "-frames:v", str(total),
+             "-vf", clip_filter(i, total / FPS, p.get("prompt")),
              "-r", str(FPS), *VCODEC, "-pix_fmt", "yuv420p", clip])
         done[0] += 1
         set_job(jid, pct=18 + round(done[0] / n * 60),
                 note=f"Rendering panels · {done[0]}/{n}"
                      + (f" · {subs} substituted" if subs else ""))
-        return dur
 
     with ThreadPoolExecutor(max_workers=LANES) as ex:
-        durs = list(ex.map(one, range(n)))
+        list(ex.map(one, range(n)))
 
     # keep one valid frame around for tail padding, then drop the downloads
     pad_src = os.path.join(d, "pad_src")
@@ -333,36 +367,66 @@ def render(jid, panels, target_seconds=0.0):
         except Exception:
             pass
 
+    def probe_frames(path):
+        try:
+            r = subprocess.run(["ffprobe", "-v", "error", "-count_frames",
+                                "-select_streams", "v:0", "-show_entries",
+                                "stream=nb_read_frames", "-of", "csv=p=0", path],
+                               capture_output=True, text=True)
+            return int((r.stdout or "0").strip() or 0)
+        except Exception:
+            return 0
+
+    def force_frames(path, want, tag):
+        """Per-lane audit: pad (clone last frame) or cut so the lane is exact."""
+        have = probe_frames(path)
+        if have == want or have <= 0:
+            return path
+        fixed = os.path.join(d, f"{tag}.exact.mp4")
+        hold = max(0.0, (want - have) / FPS) + 2.0
+        run(["ffmpeg", "-y", "-i", path,
+             "-vf", f"tpad=stop_mode=clone:stop_duration={hold:.3f},fps={FPS}",
+             "-frames:v", str(want),
+             "-r", str(FPS), *VCODEC, "-pix_fmt", "yuv420p", fixed])
+        os.replace(fixed, path)
+        return path
+
     # ---- cross-fade inside groups, then stream-copy concat the groups ------
     groups = []
     gi = 0
     for g0 in range(0, n, GROUP):
         idxs = list(range(g0, min(n, g0 + GROUP)))
         gpath = os.path.join(d, f"g{gi:05d}.mp4")
+        span_frames = sum(frames[i] for i in idxs)
         if len(idxs) == 1:
-            # the clip carries an extra XF tail for the cross-fade — cut it back
-            # to its own visible duration or the group runs long
             only = idxs[0]
             run(["ffmpeg", "-y", "-i", os.path.join(d, f"c{only:06d}.mp4"),
-                 "-t", f"{max(0.8, durs[only]):.3f}", "-c", "copy", gpath])
+                 "-frames:v", str(span_frames), "-c", "copy", gpath])
         else:
             args, fc, prev = [], [], "0:v"
             for i in idxs:
                 args += ["-i", os.path.join(d, f"c{i:06d}.mp4")]
-            # clip k starts at the sum of the *visible* durations before it,
-            # and its cross-fade with the previous clip begins exactly there
-            off = 0.0
+            # clip k's fade starts exactly at the sum of the visible frame
+            # budgets before it, so the overlap never shortens the lane
+            off_f = 0
             for k in range(1, len(idxs)):
-                off += max(0.8, durs[idxs[k - 1]])
+                off_f += frames[idxs[k - 1]]
                 lab = f"x{k}"
                 fc.append(f"[{prev}][{k}:v]xfade=transition=fade:duration={XF}:"
-                          f"offset={max(0.05, off):.3f}[{lab}]")
+                          f"offset={max(1, off_f) / FPS:.3f}[{lab}]")
                 prev = lab
 
-            span = sum(max(0.8, durs[i]) for i in idxs)
             run(["ffmpeg", "-y", *args, "-filter_complex", ";".join(fc),
-                 "-map", f"[{prev}]", "-t", f"{span:.3f}",
+                 "-map", f"[{prev}]", "-frames:v", str(span_frames),
                  "-r", str(FPS), *VCODEC, "-pix_fmt", "yuv420p", gpath])
+
+        # audit THIS lane now, while the error is still one lane wide
+        force_frames(gpath, span_frames, f"g{gi:05d}")
+        for i in idxs:
+            try:
+                os.remove(os.path.join(d, f"c{i:06d}.mp4"))
+            except Exception:
+                pass
 
         groups.append(gpath)
         gi += 1
@@ -370,10 +434,6 @@ def render(jid, panels, target_seconds=0.0):
                 note=f"Stitching · part {gi}/{math.ceil(n / GROUP)}")
 
     # ---- length guarantee: hit target_seconds exactly ----------------------
-    target = float(target_seconds or 0.0)
-    if target <= 0:
-        target = sum(max(0.8, x) for x in durs)
-
     have = sum(probe_duration(g) for g in groups)
     short = target - have
     if short > 1.0 / FPS and os.path.exists(pad_src):
@@ -383,7 +443,7 @@ def render(jid, panels, target_seconds=0.0):
         run(["ffmpeg", "-y", "-loop", "1", "-i", pad_src, "-t", f"{short:.3f}",
              "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,"
                     f"crop={W}:{H},setsar=1,fps={FPS},"
-                    f"eq=contrast=1.22:brightness=-0.10:saturation=0.84,format=yuv420p",
+                    f"eq=contrast=1.10:brightness=0.04:saturation=0.88,format=yuv420p",
              "-r", str(FPS), *VCODEC, "-pix_fmt", "yuv420p", pad])
         groups.append(pad)
 
@@ -396,6 +456,7 @@ def render(jid, panels, target_seconds=0.0):
     trim = ["-t", f"{target:.3f}"] if have > target + 1.0 / FPS else []
     run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf,
          *trim, "-c", "copy", "-movflags", "+faststart", final])
+
 
     # ---- final audit: measure the real mp4 and correct any residual drift ---
     # Stream-copy trims land on keyframes, so retry and fall back to an exact
