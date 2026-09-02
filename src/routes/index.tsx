@@ -10,6 +10,7 @@ import {
 import { buildTimeline, fmt, scriptEndTime, type Segment } from "@/lib/script";
 import { buildVideo, webCodecsSupported } from "@/lib/video";
 import { isBlankImageUrl } from "@/lib/blank";
+import { loadRun, saveRun } from "@/lib/progress";
 import { colabHealth, normalizeColabUrl, renderOnColab } from "@/lib/colab";
 
 
@@ -162,8 +163,13 @@ function Index() {
       setCanResume(false);
       return;
     }
-    const saved = loadSaved(scriptKey(script));
-    setCanResume(!!saved && saved.shots.length > 0 && shots.length === 0);
+    let alive = true;
+    void loadSaved(scriptKey(script)).then((saved) => {
+      if (alive) setCanResume(!!saved && saved.shots.length > 0 && shots.length === 0);
+    });
+    return () => {
+      alive = false;
+    };
   }, [script, shots.length]);
 
   const patch = useCallback((index: number, next: Partial<Shot>) => {
