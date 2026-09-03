@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { parseScript } from "./script";
-import { buildCharacterBible, writePrompts, generateImage } from "./manga.server";
+import { buildCharacterBible, writePrompts, generateImage, analyzeChunk } from "./manga.server";
 
 export const analyzeScript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ script: z.string().min(5) }).parse(d))
@@ -14,17 +14,23 @@ export const analyzeScript = createServerFn({ method: "POST" })
     return { segments, bible };
   });
 
+/**
+ * One chunk of the script: analysed first (setting, cast actually present,
+ * objects, mood, per-line beats), then storyboarded against that analysis so
+ * every panel in the chunk keeps the chunk's detail and continuity.
+ * Still exactly one prompt per timestamp.
+ */
 export const promptsForBatch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
         bible: z.string(),
-        // which API key slot this batch should use, so parallel batches
+        // which API key slot this chunk should use, so parallel chunks
         // spread across the whole key pool
         slot: z.number().int().min(0).default(0),
-        // the script lines just before this batch — continuity context so the
-        // storyboard doesn't lose scene detail at batch boundaries
-        context: z.string().max(4000).optional(),
+        // the script lines / previous chunk brief before this chunk — continuity
+        // context so the storyboard doesn't lose scene detail at chunk boundaries
+        context: z.string().max(6000).optional(),
         segments: z.array(
           z.object({
             index: z.number(),
@@ -37,9 +43,12 @@ export const promptsForBatch = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const prompts = await writePrompts(data.bible, data.segments, data.slot, data.context ?? "");
-    return { prompts };
+    const ctx = data.context ?? "";
+    const brief = await analyzeChunk(data.bible, data.segments, data.slot, ctx);
+    const prompts = await writePrompts(data.bible, data.segments, data.slot, ctx, brief);
+    return { prompts, brief };
   });
+
 
 
 export const renderImage = createServerFn({ method: "POST" })
