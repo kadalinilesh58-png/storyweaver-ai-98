@@ -272,9 +272,13 @@ const CHUNK_SYSTEM =
   "otherwise invent a short fixed look: age, gender, hair, clothing colour). Write 'none' if the chunk has no people.\n" +
   "OBJECTS: the specific things/phenomena the chunk mentions (gates, storm, letter, vehicle...) and how they look.\n" +
   "MOOD: lighting and atmosphere for this chunk (one line).\n" +
-  "BEATS: one short line per numbered script line — 'n) who/what is on screen and what visibly happens'. Lines that " +
-  "mention no person MUST say 'no people'.\n" +
+  "BEATS: one short line per numbered script line, in this exact format — 'n) LOCATION: <the place this shot happens " +
+  "in, 3-6 words> | <who/what is on screen and what visibly happens>'. The LOCATION must stay the SAME for every line " +
+  "of the chunk unless the script line itself clearly moves the scene somewhere else (a stated new place, a door " +
+  "opened, a journey). Dialogue, whispering, reactions and thoughts NEVER change the location. Lines that " +
+  "mention no person MUST include 'no people' after the '|'.\n" +
   "Be specific and faithful to the script. No commentary, no headings other than the labels above. Answer immediately.";
+
 
 /**
  * Reads one chunk of the script and returns a brief (setting, cast present,
