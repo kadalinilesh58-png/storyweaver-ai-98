@@ -220,6 +220,10 @@ const PROMPT_SYSTEM =
   "'blue moonlight through a barred window', 'dull ember glow in thick darkness').\n" +
 
   "RULES:\n" +
+  "- CHUNK + TIMESTAMP (critical): each prompt is written for ONE numbered timestamp, but grounded in the CHUNK BRIEF. " +
+  "Take the place, lighting, objects and cast from the brief's SETTING/OBJECTS/MOOD/CAST, then apply the per-line BEAT " +
+  "and the exact words of that timestamp's line. A prompt must never contradict the brief, and must never copy another " +
+  "timestamp's action.\n" +
   "- FAITHFUL DETAIL (critical): the prompt must capture the specific things that line actually says — the object, the " +
   "place, the gesture, the emotion, the weather, the time of day. Never write a generic 'a boy stands thinking' prompt. " +
   "Do not skip story details; if the line has several details, include the most visual ones.\n" +
