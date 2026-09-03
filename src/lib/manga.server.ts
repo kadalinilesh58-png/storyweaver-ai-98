@@ -325,6 +325,7 @@ export async function writePrompts(
   segments: Segment[],
   slot = 0,
   context = "",
+  brief = "",
 ): Promise<string[]> {
   const numbered = segments.map((s, i) => `${i + 1}. [${s.start}s-${s.end}s] ${s.text}`).join("\n");
 
@@ -337,9 +338,14 @@ export async function writePrompts(
           content:
             `CHARACTER BIBLE:\n${bible}\n\n` +
             (context ? `STORY SO FAR (context only — do NOT storyboard these):\n${context}\n\n` : "") +
+            (brief
+              ? `CHUNK BRIEF (analysis of exactly these lines — obey its SETTING, CAST, OBJECTS, MOOD and per-line BEATS; ` +
+                `never add a person the BEATS call 'no people'):\n${brief}\n\n`
+              : "") +
             `SCRIPT LINES:\n${lines}\n\nReturn a JSON array with exactly ${segs.length} prompt strings.`,
         },
       ],
+
       {
         temperature: temp,
         maxTokens: 500 + segs.length * 320,
