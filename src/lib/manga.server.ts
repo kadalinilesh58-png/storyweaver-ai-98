@@ -258,13 +258,68 @@ const PROMPT_SYSTEM =
   "- Do not deliberate or explain. Output the JSON array immediately.\n" +
   'Return ONLY a JSON array of strings, one per numbered line, in order.';
 
+const CHUNK_SYSTEM =
+  "You are a manga art director. You are given a character bible, the story so far, and one CHUNK of consecutive " +
+  "script lines (Hindi/Hinglish) with timestamps. Analyse ONLY this chunk and return a compact English CHUNK BRIEF " +
+  "that a storyboard artist will use to draw every line of this chunk.\n" +
+  "Return plain text with exactly these labelled lines:\n" +
+  "SETTING: the place(s) this chunk happens in, with 3-5 concrete visual details (architecture, objects, weather, time of day).\n" +
+  "CAST: only the people who actually appear in this chunk, each with their fixed traits (from the bible if listed there, " +
+  "otherwise invent a short fixed look: age, gender, hair, clothing colour). Write 'none' if the chunk has no people.\n" +
+  "OBJECTS: the specific things/phenomena the chunk mentions (gates, storm, letter, vehicle...) and how they look.\n" +
+  "MOOD: lighting and atmosphere for this chunk (one line).\n" +
+  "BEATS: one short line per numbered script line — 'n) who/what is on screen and what visibly happens'. Lines that " +
+  "mention no person MUST say 'no people'.\n" +
+  "Be specific and faithful to the script. No commentary, no headings other than the labels above. Answer immediately.";
+
+/**
+ * Reads one chunk of the script and returns a brief (setting, cast present,
+ * objects, mood, per-line beats). Written before the chunk's prompts so every
+ * panel in the chunk shares the same analysed context — this is what keeps
+ * detail and continuity inside a chunk.
+ */
+export async function analyzeChunk(
+  bible: string,
+  segments: Segment[],
+  slot = 0,
+  context = "",
+): Promise<string> {
+  const numbered = segments.map((s, i) => `${i + 1}. [${s.start}s-${s.end}s] ${s.text}`).join("\n");
+  try {
+    const out = await zaiChat(
+      [
+        { role: "system", content: CHUNK_SYSTEM },
+        {
+          role: "user",
+          content:
+            `CHARACTER BIBLE:\n${bible}\n\n` +
+            (context ? `STORY SO FAR:\n${context}\n\n` : "") +
+            `CHUNK SCRIPT LINES:\n${numbered}`,
+        },
+      ],
+      {
+        temperature: 0.4,
+        maxTokens: 400 + segments.length * 90,
+        timeoutMs: 60_000,
+        attempts: 2,
+        slot,
+      },
+    );
+    return stripFences(out).slice(0, 3000);
+  } catch (e) {
+    console.error("analyzeChunk failed:", e instanceof Error ? e.message : e);
+    return "";
+  }
+}
+
 /**
  * Writes one image prompt per segment, in batches.
  *
- * `context` carries the couple of script lines immediately before this batch so
- * the model knows where the scene is and who is present — that continuity is
- * what stops panels from losing story detail at batch boundaries.
+ * `context` carries the chunk brief plus the script lines immediately before
+ * this chunk so the model knows where the scene is and who is present — that
+ * continuity is what stops panels from losing story detail at chunk boundaries.
  */
+
 export async function writePrompts(
   bible: string,
   segments: Segment[],
