@@ -53,10 +53,14 @@ const SAMPLE = `(0:00)Henan की कहानी असुरा का उद
 /* Pipeline tuning                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Scenes per chat call — small batches answer in seconds. */
-const BATCH = 6;
-/** Parallel chat calls (≈4 per Paralon key). */
-const PROMPT_CONCURRENCY = 16;
+/** Script lines per analysed chunk — one image prompt is still written per line. */
+const BATCH = 10;
+/**
+ * Chunks analysed + storyboarded at the same time: one per Paralon key, so the
+ * 7 keys run 7 consecutive chunks in parallel, wave after wave in script order.
+ */
+const PROMPT_CONCURRENCY = 7;
+
 /**
  * Parallel image request lanes. Each lane sends IMAGE_BATCH prompts in one
  * round trip and the server renders them concurrently, so the real number of
@@ -256,30 +260,30 @@ function Index() {
         void saveProgress(key, { bible: b, shots: list });
       };
 
-      const promptStage = pool(batches, PROMPT_CONCURRENCY, async (batch) => {
-        if (cancelRef.current) return;
+      // Chunk stage: PROMPT_CONCURRENCY consecutive chunks are analysed and
+      // storyboarded in parallel (one API key each), wave after wave in script
+      // order. Each wave hands the next wave the previous chunk briefs so the
+      // story stays continuous across chunk boundaries.
+      let carry = "";
+      const runChunk = async (batch: Segment[], slot: number, ctx: string) => {
+        if (cancelRef.current) return "";
+        let brief = "";
         try {
-          // continuity: hand the model the script lines just before this batch
-          // so a batch boundary never loses the thread of the scene
-          const first = batch[0]!.index;
-          const context = list
-            .filter((s) => s.index >= first - 4 && s.index < first)
-            .map((s) => `[${fmt(s.start)}] ${s.text}`)
-            .join("\n");
           const res = await getPrompts({
             data: {
               bible: b,
-              context,
+              context: ctx,
               segments: batch.map((s) => ({
                 index: s.index,
                 start: s.start,
                 end: s.end,
                 text: s.text,
               })),
-              slot: keyTick++,
+              slot,
             },
           });
 
+          brief = ((res as { brief?: string }).brief ?? "").slice(0, 1200);
           const prompts = res.prompts as string[];
           batch.forEach((s, i) => {
             const prompt = prompts[i];
@@ -296,9 +300,30 @@ function Index() {
         }
         promptDone += batch.length;
         tick();
-      }).then(() => {
+        return brief;
+      };
+
+      const promptStage = (async () => {
+        for (let w = 0; w < batches.length; w += PROMPT_CONCURRENCY) {
+          if (cancelRef.current) break;
+          const wave = batches.slice(w, w + PROMPT_CONCURRENCY);
+          const ctxForWave = wave.map((batch) => {
+            const first = batch[0]!.index;
+            const lines = list
+              .filter((s) => s.index >= first - 4 && s.index < first)
+              .map((s) => `[${fmt(s.start)}] ${s.text}`)
+              .join("\n");
+            return [carry, lines].filter(Boolean).join("\n\n");
+          });
+          const briefs = await Promise.all(
+            wave.map((batch, i) => runChunk(batch, keyTick++, ctxForWave[i] as string)),
+          );
+          carry = briefs.filter(Boolean).slice(-2).join("\n\n").slice(0, 2500);
+        }
+      })().then(() => {
         promptingDone = true;
       });
+
 
       // Adaptive throttle: back off globally when the provider rate-limits.
       let cooldownUntil = 0;
