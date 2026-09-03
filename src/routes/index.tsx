@@ -53,10 +53,14 @@ const SAMPLE = `(0:00)Henan की कहानी असुरा का उद
 /* Pipeline tuning                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Scenes per chat call — small batches answer in seconds. */
-const BATCH = 6;
-/** Parallel chat calls (≈4 per Paralon key). */
-const PROMPT_CONCURRENCY = 16;
+/** Script lines per analysed chunk — one image prompt is still written per line. */
+const BATCH = 10;
+/**
+ * Chunks analysed + storyboarded at the same time: one per Paralon key, so the
+ * 7 keys run 7 consecutive chunks in parallel, wave after wave in script order.
+ */
+const PROMPT_CONCURRENCY = 7;
+
 /**
  * Parallel image request lanes. Each lane sends IMAGE_BATCH prompts in one
  * round trip and the server renders them concurrently, so the real number of
